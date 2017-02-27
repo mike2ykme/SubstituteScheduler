@@ -46,7 +46,9 @@ public class Substitute {
 		this.substituteService = substituteService;
 		this.email = email;
 	}
-
+	public Substitute getSubstituteFromId(SubstituteService substituteService, long substituteId){
+		return substituteService.getSubstitute(substituteId);
+	}
 	public Substitute(SubstituteService substituteService, long substituteId) {
 		Substitute substitute = substituteService.getSubstitute(substituteId);
 
