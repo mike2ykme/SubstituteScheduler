@@ -1,11 +1,10 @@
 package com.icrn.model;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import javax.activation.UnsupportedDataTypeException;
 
 import com.icrn.service.SubstituteMessaging;
 import com.icrn.service.SubstituteService;
@@ -21,77 +20,73 @@ public class Substitute {
 	private String phone;
 	private String address;
 	private String postalCode;
-	
-	//private List<Map<Long, String>> schoolIdList;
-	private Map<Long,String> schoolIdList;
+	private Map<Long,SchoolStatus> schoolIdList;
+
 	private SubstituteService substituteService;
 	private SubstituteMessaging substituteMessaging;
+	
 
-	public Substitute(SubstituteService substituteService) {
-		this.substituteService = substituteService;
-	}
-
-	public Substitute(SubstituteService substituteService, long substituteId, String firstName, String lastName,
-			boolean active, String password, String phone, String address, String postalCode, String email) {
+	Substitute(long substituteId, boolean active, String firstName, String lastName, String email, String password,
+			String phone, String address, String postalCode, Map<Long, SchoolStatus> schoolIdList,
+			com.icrn.service.SubstituteService substituteService, SubstituteMessaging substituteMessaging) {
 		super();
 		this.substituteId = substituteId;
+		this.active = active;
 		this.firstName = firstName;
 		this.lastName = lastName;
-		this.active = active;
+		this.email = email;
 		this.password = password;
 		this.phone = phone;
 		this.address = address;
 		this.postalCode = postalCode;
-		this.schoolIdList = new HashMap<Long, String>();
+		this.schoolIdList = schoolIdList;
 		this.substituteService = substituteService;
-		this.email = email;
+		this.substituteMessaging = substituteMessaging;
 	}
-	public Substitute getSubstituteFromId(SubstituteService substituteService, long substituteId){
-		return substituteService.getSubstitute(substituteId);
+	
+	public boolean isAvailable(LocalDate date, LocalTime start, LocalTime end){
+		Map<LocalDate,Shift> shiftMap = this.substituteService.GetAvailabilityForSubstitute(substituteId, LocalDateTime.of(date, start), LocalDateTime.of(date, end));
+		Shift shift = shiftMap.get(date); 
+		
+		//Is this just using the ternary operator because I can?
+		return (shift != null) ? shift.isWithinTime(date, start, end) : false;
+		
 	}
-	public Substitute(SubstituteService substituteService, long substituteId) {
-		Substitute substitute = substituteService.getSubstitute(substituteId);
-
-		this.substituteService = substituteService;
-		this.setSubstituteId(substitute.getSubstituteId());
-		this.setFirstName(substitute.getFirstName());
-		this.setLastName(substitute.getLastName());
-		this.setActive(substitute.isActive());
-		this.setPassword(substitute.getPassword());
-		this.setPhone(substitute.getPhone());
-		this.setAddress(substitute.getAddress());
-		this.setPostalCode(substitute.getPostalCode());
-		this.setEmail(substitute.getEmail());
-		this.setSchoolIdList(substitute.getSchoolIdList());
-
+	public Map<LocalDate,Shift> getShiftAvailability(LocalDateTime start, LocalDateTime end){
+		return this.substituteService.GetAvailabilityForSubstitute(this.getSubstituteId(),start,end);
 	}
-
-	public boolean messageSubstitute(String message) {
-		return substituteMessaging.messageSubstitute(this.getEmail(), message);
+	
+	public boolean saveSubstitute(){
+		return this.substituteService.updateSubstitute(this);
+		
 	}
-
-	public long getSubstituteId() {
-		return substituteId;
+	
+	public void getAvailabilityCalendar(){
+		//TODO
 	}
-
-	private void setSubstituteId(long substituteId) {
-		this.substituteId = substituteId;
+	
+	public void setAvailabilityCalendar(){
+		//TODO
 	}
-
-	public String getFirstName() {
-		return firstName;
+	
+	public void getVacationAvailabilityCalendar(){
+		//TODO
+	}
+	
+	public void setVacationAvailabilityCalendar(){
+		//TODO
 	}
 
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
+	public Map<Long, SchoolStatus> getSchoolIdList() {
+		return Collections.unmodifiableMap(schoolIdList);
 	}
-
-	public String getLastName() {
-		return lastName;
+	public void updateSchoolStatus(long schoolId,SchoolStatus status){
+		if(status == null) throw new IllegalArgumentException("status null");
+		schoolIdList.put(schoolId, status);
 	}
-
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
+	
+	public void addSchool(long schoolId,SchoolStatus status){
+		this.updateSchoolStatus(schoolId, status);
 	}
 
 	public boolean isActive() {
@@ -102,69 +97,93 @@ public class Substitute {
 		this.active = active;
 	}
 
-	public String getPassword() {
-		return password;
+
+	public String getFirstName() {
+		return firstName;
 	}
 
-	public void setPassword(String password) {
-		this.password = password;
+
+
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
 	}
 
-	public String getPhone() {
-		return phone;
+
+
+	public String getLastName() {
+		return lastName;
 	}
 
-	public void setPhone(String phone) {
-		this.phone = phone;
+
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
 	}
 
-	public String getAddress() {
-		return address;
-	}
 
-	public void setAddress(String address) {
-		this.address = address;
-	}
-
-	public String getPostalCode() {
-		return postalCode;
-	}
-
-	public void setPostalCode(String postalCode) {
-		this.postalCode = postalCode;
-	}
-
-	private void setSchoolIdList(Map<Long, String> schoolIdList) {
-		this.schoolIdList = schoolIdList;
-	}
-
-	public SubstituteService getSubstituteService() {
-		return substituteService;
-	}
-
-	public void SubstituteService(SubstituteService substituteService) {
-		this.substituteService = substituteService;
-	}
 
 	public String getEmail() {
 		return email;
 	}
 
+
+
 	public void setEmail(String email) {
 		this.email = email;
 	}
+
+
+
+	public String getPassword() {
+		return password;
+	}
+
+
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+
+
+	public String getPhone() {
+		return phone;
+	}
+
+
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
+
+
+	public String getAddress() {
+		return address;
+	}
+
+
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+
+
+	public String getPostalCode() {
+		return postalCode;
+	}
+
+
+
+	public void setPostalCode(String postalCode) {
+		this.postalCode = postalCode;
+	}
+
+
+
+	public long getSubstituteId() {
+		return substituteId;
+	}
 	
-	//return unmodifiable list of school status
-	public Map<Long, String> getSchoolIdList() {
-		//return Collections.unmodifiableList(schoolIdList);
-		return Collections.unmodifiableMap(schoolIdList);
-	}
-	public boolean updateSchoolStatus(long schoolId,String status){
-		if(status.isEmpty() || status == null) throw new RuntimeException("status was null or empty");
-		if(schoolIdList.put(schoolId, status) == null) 
-			return false;
-		
-		return true;
-		
-	}
 }
