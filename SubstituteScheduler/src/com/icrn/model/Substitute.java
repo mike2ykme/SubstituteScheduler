@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.icrn.enumerations.SchoolStatus;
 import com.icrn.service.SubstituteMessaging;
 import com.icrn.service.SubstituteService;
 
@@ -23,7 +24,7 @@ public class Substitute {
 	private String phone;
 	private String address;
 	private String postalCode;
-	private Map<Long, SchoolStatus> schoolIdList;
+	private Map<Long, SchoolStatus> schoolStatusMap;
 	private List<Availability> standardAvailability;
 	private List<Availability> tempAvailability;
 
@@ -32,11 +33,17 @@ public class Substitute {
 
 	private Substitute(SubstituteBuilder sb) {
 		super();
-		if (substituteId == 0 || firstName == null || lastName == null || email == null || password == null
-				|| phone == null || address == null || postalCode == null || substituteService == null
-				//|| substituteMessaging == null 
-				|| standardAvailability == null || tempAvailability ==null ) {
-			throw new IllegalArgumentException("Parameter not set or substituteId equals 0");
+		if(		 
+			sb.getFirstName() == null || 
+			sb.getLastName() == null ||
+			sb.getEmail() == null ||
+			sb.getPassword() == null ||
+			sb.getPhone() == null ||
+			sb.getAddress() == null ||
+			sb.getPostalCode() == null ||
+			sb.getSubstituteService() == null ||
+			sb.getStandardAvailability() == null){
+				throw new IllegalArgumentException("Parameter not set");
 		}
 		
 		this.substituteId = sb.getSubstituteId();
@@ -48,17 +55,29 @@ public class Substitute {
 		this.phone = sb.getPhone();
 		this.address = sb.getAddress();
 		this.postalCode = sb.getPostalCode();
-		this.schoolIdList = sb.getSchoolIdList();
+		this.schoolStatusMap = sb.getSchoolIdList();
 		this.substituteService = sb.getSubstituteService();
 		this.substituteMessaging = sb.getSubstituteMessaging();
 		this.standardAvailability = sb.getStandardAvailability(); 
 		this.tempAvailability = sb.getTempAvailability();
 	}
 
-
+	private static Substitute loadSubstituteById(SubstituteService subService,long substituteId){
+		return subService.getSubstitute(substituteId);
+	}
+	
+	private static List<Substitute> getSubstitutes(SubstituteService subService){
+		return subService.getListSubstitutes();
+	}
+	private static List<Substitute> getSubstitutesByFirstName(SubstituteService subService,String firstName){
+		return subService.getListSubstitutesByFirstName(firstName);
+	}
+	private static List<Substitute> getSubstitutesByLastName(SubstituteService subService,String lastName){
+		return subService.getListSubstitutesByLastName(lastName);
+	}
 
 	public boolean isAvailable(LocalDate date, LocalTime start, LocalTime end) {
-		Map<LocalDate, Shift> shiftMap = this.substituteService.GetAvailabilityForSubstitute(substituteId,
+		Map<LocalDate, Shift> shiftMap = this.substituteService.GetShiftAvailabilityForSubstitute(substituteId,
 				LocalDateTime.of(date, start), LocalDateTime.of(date, end));
 		Shift shift = shiftMap.get(date);
 
@@ -66,14 +85,19 @@ public class Substitute {
 		return (shift != null) ? shift.isWithinTime(date, start, end) : false;
 
 	}
-
+	//This returns an inclusive date. So 1-3 will return 1,2,3rd dates
 	public Map<LocalDate, Shift> getShiftAvailability(LocalDateTime start, LocalDateTime end) {
-		return this.substituteService.GetAvailabilityForSubstitute(this.getSubstituteId(), start, end);
+		return this.substituteService.GetShiftAvailabilityForSubstitute(this.getSubstituteId(), start, end);
 	}
 
-	public boolean saveSubstitute() {
-		return this.substituteService.updateSubstitute(this);
-
+	public boolean persist() {
+		if(this.substituteId == 0){
+			this.substituteId = this.substituteService.createSubstitute(this);
+			return true;
+		}
+		else{
+			return this.substituteService.updateSubstitute(this);	
+		}
 	}
 
 	public List<Availability> getStandardAvailabilityCalendar() {
@@ -111,13 +135,13 @@ public class Substitute {
 	}
 
 	public Map<Long, SchoolStatus> getSchoolIdList() {
-		return Collections.unmodifiableMap(schoolIdList);
+		return Collections.unmodifiableMap(schoolStatusMap);
 	}
 
 	public void updateSchoolStatus(long schoolId, SchoolStatus status) {
 		if (status == null)
 			throw new IllegalArgumentException("status null");
-		schoolIdList.put(schoolId, status);
+		schoolStatusMap.put(schoolId, status);
 	}
 
 	public void addSchool(long schoolId, SchoolStatus status) {
@@ -166,7 +190,6 @@ public class Substitute {
 
 	public void updatePassword(String password) {
 		this.password = password;
-		this.substituteService.updateSubstitute(this);
 	}
 
 	public String getPhone() {
@@ -214,19 +237,29 @@ public class Substitute {
 
 		private SubstituteService substituteService;
 		private SubstituteMessaging substituteMessaging;
-
+		
+		public static Substitute loadSubstituteById(SubstituteService subService,long substituteId){
+			return Substitute.loadSubstituteById(subService, substituteId);
+		}
+		public static List<Substitute> getSubstitutes(SubstituteService subService){
+			return Substitute.getSubstitutes(subService);
+		}
+		public static List<Substitute> getSubstitutesByFirstName(SubstituteService subService,String firstName){
+			return Substitute.getSubstitutesByFirstName(subService,firstName);
+		}
+		public static List<Substitute> getSubstitutesByLastName(SubstituteService subService,String lastName){
+			return Substitute.getSubstitutesByLastName(subService,lastName);
+		}
 		public Substitute build() {
 			if (this.schoolIdList == null) {
 				this.schoolIdList = new HashMap<Long, SchoolStatus>();
 			}
 
 			Substitute sub = new Substitute(this);
-
 			return sub;
 		}
 
 		public SubstituteBuilder setSubstituteId(long substituteId) {
-
 			this.substituteId = substituteId;
 			return this;
 		}

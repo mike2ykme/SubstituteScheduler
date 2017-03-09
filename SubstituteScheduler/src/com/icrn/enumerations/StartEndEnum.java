@@ -1,4 +1,4 @@
-package com.icrn.model;
+package com.icrn.enumerations;
 
 public enum StartEndEnum{
 	START,END;

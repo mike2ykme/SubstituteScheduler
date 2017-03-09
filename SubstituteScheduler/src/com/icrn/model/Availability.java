@@ -7,6 +7,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.icrn.enumerations.StartEndEnum;
+
 public class Availability {
 	//scheduleId is used when updating records in the DB. This way if a current schedule needs to be removed/added/updated it can be
 	private final long scheduleId;
@@ -22,7 +24,9 @@ public class Availability {
 		this.scheduleId = ab.getScheduleId();
 		this.substituteId = ab.getSubstituteId();
 	}
-
+	public long getSubstituteId(){
+		return this.substituteId;
+	}
 	public LocalDate getStartDate() {
 		return startDate;
 	}
@@ -54,11 +58,6 @@ public class Availability {
 					availability.getDailyAvailability() == null ){
 				throw new IllegalStateException("Value has not been set");
 			}
-//			if(this.dailyAvailability.get(DayOfWeek.MONDAY) == null || this.dailyAvailability.get(DayOfWeek.TUESDAY) == null|| this.dailyAvailability.get(DayOfWeek.WEDNESDAY) == null ||
-//					this.dailyAvailability.get(DayOfWeek.THURSDAY) == null || this.dailyAvailability.get(DayOfWeek.FRIDAY) == null ||this.dailyAvailability.get(DayOfWeek.SATURDAY) == null ||
-//					this.dailyAvailability.get(DayOfWeek.SUNDAY) == null){
-//				throw new IllegalStateException("Daily value has not been set");
-//			}
 			
 			return availability;
 		}
@@ -67,8 +66,7 @@ public class Availability {
 			// TODO Auto-generated method stub
 			return this.substituteId;
 		}
-		public AvailabilityBuilder 
-		setSubstituteId(long id){
+		public AvailabilityBuilder setSubstituteId(long id){
 			this.substituteId = id;
 			return this;
 		}
