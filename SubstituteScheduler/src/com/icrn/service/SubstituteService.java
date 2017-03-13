@@ -24,9 +24,9 @@ public interface SubstituteService {
 	
 	void updateTempAvailabilityCalendar(Availability availability);
 
-	void setTempAvailabilityCalendar(List<Availability> availability);
+	void setTempAvailabilityCalendar(Availability availability);
 
-	void setStandardAvailabilityCalendar(List<Availability> availability);
+	void setStandardAvailabilityCalendar(Availability availability);
 
 	void addTempAvailabilityCalendar(Availability availability);
 

@@ -10,9 +10,6 @@ import java.util.Map;
 import com.icrn.enumerations.StartEndEnum;
 
 public class Availability {
-	//scheduleId is used when updating records in the DB. This way if a current schedule needs to be removed/added/updated it can be
-	private final long scheduleId;
-	private final long substituteId;
 	private final LocalDate startDate;
 	private final LocalDate endDate;
 	private final Map<DayOfWeek,Map<StartEndEnum,LocalTime>> dailyAvailability;
@@ -21,12 +18,13 @@ public class Availability {
 		this.startDate = ab.getStartDate();
 		this.endDate = ab.getEndDate();
 		this.dailyAvailability = ab.getDailyAvailability();
-		this.scheduleId = ab.getScheduleId();
-		this.substituteId = ab.getSubstituteId();
 	}
-	public long getSubstituteId(){
-		return this.substituteId;
-	}
+	/*
+	 * 
+	 * Getters no setters, if a substitute needs to have it's availability changed, then it should be given a new availability and that should be persisted in the DB
+	 * 
+	 */
+
 	public LocalDate getStartDate() {
 		return startDate;
 	}
@@ -34,19 +32,53 @@ public class Availability {
 	public LocalDate getEndDate() {
 		return endDate;
 	}
-
-	public long getScheduleId(){
-		return scheduleId;
-		
-	}
 	
 	public Map<DayOfWeek, Map<StartEndEnum, LocalTime>> getDailyAvailability() {
 		return Collections.unmodifiableMap(dailyAvailability);
 	}
 	
+
+	/*
+	 * 
+	 * Validation Methods
+	 * 
+	 */
+	
+	public boolean isAvailableDuring(LocalDate day, LocalTime startTime, LocalTime endTime){
+		
+		if(this.dayIsBetweenAvailability(day)){
+			DayOfWeek weekDay = day.getDayOfWeek();
+			LocalTime start = this.getDailyAvailability().get(weekDay).get(StartEndEnum.START);
+			LocalTime end = this.getDailyAvailability().get(weekDay).get(StartEndEnum.END);
+			
+			if(start.plusMinutes(-1).isBefore(startTime) && end.plusMinutes(1).isAfter(endTime))
+				return true;
+		}
+		
+				
+		return false;
+	}
+	public boolean dayIsBetweenAvailability(LocalDate day){
+		if(	(this.startDate.equals(day) || this.startDate.isBefore(day)) &&
+			(this.endDate.equals(day) || this.endDate.isAfter(day))){ 
+			return true;
+		}
+		return false;
+	}
+	
+	/*
+	 * 
+	 * 
+	 * 
+	 * 
+	 * AvailabilityBuilder
+	 * 
+	 * 
+	 * 
+	 * 
+	 */
+	
 	public static class AvailabilityBuilder{
-		private long scheduleId = 0;
-		private long substituteId;
 		private LocalDate startDate;
 		private LocalDate endDate;
 		private Map<DayOfWeek,Map<StartEndEnum,LocalTime>> dailyAvailability;
@@ -61,15 +93,13 @@ public class Availability {
 			
 			return availability;
 		}
+		public static Availability getEmptyAvailability(){
+			AvailabilityBuilder ab = new AvailabilityBuilder();
+			ab.setEndDateAvailability(LocalDate.ofEpochDay(0));
+			ab.setStartDateAvailability(LocalDate.ofEpochDay(0));
+			return new Availability(ab);
+		}
 		
-		public long getSubstituteId() {
-			// TODO Auto-generated method stub
-			return this.substituteId;
-		}
-		public AvailabilityBuilder setSubstituteId(long id){
-			this.substituteId = id;
-			return this;
-		}
 
 		public AvailabilityBuilder() {
 			this.dailyAvailability = new HashMap<>();
@@ -93,6 +123,17 @@ public class Availability {
 			this.endDate = endDate;
 			return this;
 		}
+		
+		
+		/*
+		 *
+		 * 
+		 * 
+		 * Daily methods
+		 * 
+		 * 
+		 * 
+		 */
 		
 		public AvailabilityBuilder setMondayAvailability(LocalTime start, LocalTime end){
 			if(start.isAfter(end))
@@ -162,14 +203,6 @@ public class Availability {
 			this.dailyAvailability.get(DayOfWeek.SUNDAY).put(StartEndEnum.START, start);
 			this.dailyAvailability.get(DayOfWeek.SUNDAY).put(StartEndEnum.END, end);
 			return this;
-		}
-
-		public long getScheduleId() {
-			return scheduleId;
-		}
-
-		public void setScheduleId(long scheduleId) {
-			this.scheduleId = scheduleId;
 		}
 	}
 

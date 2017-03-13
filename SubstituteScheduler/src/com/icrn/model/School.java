@@ -22,6 +22,11 @@ public class School {
 	private Map<Long,SchoolStatus> substituteStatusMap;
 	private SchoolService service;
 
+	/* 
+	 * 
+	 * constructors
+	 * 
+	 */
 	
 	public School(long schoolId, String name, String address, String zipCode,SchoolService service,List<Request> requests){
 		this.schoolName = name;
@@ -41,6 +46,11 @@ public class School {
 		this(0,name,address,zipCode,service,new ArrayList<>());
 
 	}
+	/*
+	 * 
+	 * Static getter methods for retrieval from database
+	 * 
+	 */
 	
 	public static List<School> getListSchools(SchoolService service){
 		return service.getListSchools();
@@ -51,6 +61,11 @@ public class School {
 	public static List<School> getListSchools(SchoolService service,String zipCode){
 		return service.getListSchoolsByZipCode(zipCode);
 	}
+	/*
+	 * 
+	 * 
+	 * 
+	 */
 	
 	public void registerSubstitute(Substitute substitute,SchoolStatus status){
 		this.substituteStatusMap.put(substitute.getSubstituteId(), status);
@@ -61,6 +76,7 @@ public class School {
 	
 //	substituteStatusMap
 	public void persist(){
+		//TODO: Need to ensure data validation is done before sending an object to be persisted
 		if(this.schoolId==0){
 			this.schoolId = this.service.createSchool(this);
 		}
@@ -69,6 +85,14 @@ public class School {
 		}
 		
 	}
+	
+	/*
+	 * 
+	 * 
+	 * Getter and Setter Methods
+	 * 
+	 * 
+	 */
 	public String getSchoolName() {
 		return schoolName;
 	}
@@ -126,7 +150,7 @@ public class School {
 	}	
 	
 	public void setRequests(List<Request> requests) {
-		this.requests = requests;
+		this.requests = new ArrayList<>(requests);
 	}
 	
 

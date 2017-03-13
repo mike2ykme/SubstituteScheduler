@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.icrn.enumerations.RequestStatus;
 import com.icrn.enumerations.SchoolStatus;
 import com.icrn.service.SubstituteMessaging;
 import com.icrn.service.SubstituteService;
@@ -25,12 +26,21 @@ public class Substitute {
 	private String address;
 	private String postalCode;
 	private Map<Long, SchoolStatus> schoolStatusMap;
-	private List<Availability> standardAvailability;
-	private List<Availability> tempAvailability;
+	private List<Shift> shiftList;
+	private Availability standardAvailability;
+	private Availability tempAvailability;
 
 	private SubstituteService substituteService;
 	private SubstituteMessaging substituteMessaging;
 
+	/* 
+	 * 
+	 * constructors
+	 * 
+	 */
+	private Substitute(){
+		
+	}
 	private Substitute(SubstituteBuilder sb) {
 		super();
 		if(		 
@@ -42,7 +52,8 @@ public class Substitute {
 			sb.getAddress() == null ||
 			sb.getPostalCode() == null ||
 			sb.getSubstituteService() == null ||
-			sb.getStandardAvailability() == null){
+			sb.getStandardAvailability() == null ||
+			sb.getTempAvailability() == null){
 				throw new IllegalArgumentException("Parameter not set");
 		}
 		
@@ -55,99 +66,153 @@ public class Substitute {
 		this.phone = sb.getPhone();
 		this.address = sb.getAddress();
 		this.postalCode = sb.getPostalCode();
-		this.schoolStatusMap = sb.getSchoolIdList();
+		this.schoolStatusMap = sb.getSchoolStatusMap();
 		this.substituteService = sb.getSubstituteService();
 		this.substituteMessaging = sb.getSubstituteMessaging();
 		this.standardAvailability = sb.getStandardAvailability(); 
 		this.tempAvailability = sb.getTempAvailability();
+		
 	}
 
-	private static Substitute loadSubstituteById(SubstituteService subService,long substituteId){
-		return subService.getSubstitute(substituteId);
-	}
+	/* 
+	 * 
+	 * Persistence
+	 * 
+	 */
 	
-	private static List<Substitute> getSubstitutes(SubstituteService subService){
-		return subService.getListSubstitutes();
-	}
-	private static List<Substitute> getSubstitutesByFirstName(SubstituteService subService,String firstName){
-		return subService.getListSubstitutesByFirstName(firstName);
-	}
-	private static List<Substitute> getSubstitutesByLastName(SubstituteService subService,String lastName){
-		return subService.getListSubstitutesByLastName(lastName);
-	}
-
-	public boolean isAvailable(LocalDate date, LocalTime start, LocalTime end) {
-		Map<LocalDate, Shift> shiftMap = this.substituteService.GetShiftAvailabilityForSubstitute(substituteId,
-				LocalDateTime.of(date, start), LocalDateTime.of(date, end));
-		Shift shift = shiftMap.get(date);
-
-		// Is this just using the ternary operator because I can?
-		return (shift != null) ? shift.isWithinTime(date, start, end) : false;
-
-	}
-	//This returns an inclusive date. So 1-3 will return 1,2,3rd dates
-	public Map<LocalDate, Shift> getShiftAvailability(LocalDateTime start, LocalDateTime end) {
-		return this.substituteService.GetShiftAvailabilityForSubstitute(this.getSubstituteId(), start, end);
-	}
-
 	public boolean persist() {
+		//TODO: Need to ensure data validation is done before sending an object to be persisted
 		if(this.substituteId == 0){
+			//The DB will provide the keyId for this, so when saved, get the key and update this.
 			this.substituteId = this.substituteService.createSubstitute(this);
+			
+			this.shiftList.forEach(shift ->{
+				if(shift.getSubstituteId() != this.substituteId)
+					shift.setSubstituteId(this.substituteId);
+			});
+			
 			return true;
 		}
 		else{
 			return this.substituteService.updateSubstitute(this);	
 		}
 	}
-
-	public List<Availability> getStandardAvailabilityCalendar() {
-		return Collections.unmodifiableList(this.standardAvailability);
+		
+	/* 
+	 * 
+	 * Static getter methods for retrieving from DB
+	 * 
+	 */
+	
+	public static Substitute loadSubstituteById(SubstituteService subService,long substituteId){
+		return subService.getSubstitute(substituteId);
+	}
+	public static List<Substitute> getSubstitutes(SubstituteService subService){
+		return subService.getListSubstitutes();
+	}
+	public static List<Substitute> getSubstitutesByFirstName(SubstituteService subService,String firstName){
+		return subService.getListSubstitutesByFirstName(firstName);
+	}
+	public static List<Substitute> getSubstitutesByLastName(SubstituteService subService,String lastName){
+		return subService.getListSubstitutesByLastName(lastName);
 	}
 
-	public void addStandardAvailabilityCalendar(Availability availability) {
-		if (availability == null)
-			throw new IllegalArgumentException("Availability cannot be null");
-		this.substituteService.addStandardAvailabilityCalendar(availability);
-		this.standardAvailability.add(availability);
-
+	/* 
+	 * 
+	 * 
+	 * Availability methods
+	 * 
+	 * 
+	 */
+	
+	public boolean isAvailable(LocalDate day, LocalTime start, LocalTime end) {
+		//Using the getter methods since there's no reason to update them.
+		
+		if(this.getTempAvailabilityCalendar().dayIsBetweenAvailability(day)){
+			return this.getTempAvailabilityCalendar().isAvailableDuring(day, start, end);
+		}
+		else{
+			return this.getStandardAvailabilityCalendar().isAvailableDuring(day, start, end);
+		}
+	}
+	
+	//This returns an inclusive date. So 1-3 will return 1,2,3rd dates
+	public Map<LocalDate, Shift> getShiftAvailability(LocalDateTime start, LocalDateTime end) {
+		return this.substituteService.GetShiftAvailabilityForSubstitute(this.getSubstituteId(), start, end);
 	}
 
-	public void setStandardAvailabilityCalendar(List<Availability> availability) {
+	public Availability getStandardAvailabilityCalendar() {
+		return this.standardAvailability;
+	}
+
+
+	public void setStandardAvailabilityCalendar(Availability availability) {
 		this.substituteService.setStandardAvailabilityCalendar(availability);
 		this.standardAvailability = availability;
 	}
 
-	public List<Availability> getTempAvailabilityCalendar() {
-		return Collections.unmodifiableList(this.tempAvailability);
+	public Availability getTempAvailabilityCalendar() {
+		return this.tempAvailability;
 	}
 
-	public void addTempAvailabilityCalendar(Availability availability) {
-		if (availability == null)
-			throw new IllegalArgumentException("Availability null");
-		this.substituteService.addTempAvailabilityCalendar(availability);
-		this.tempAvailability.add(availability);
-	}
 
-	public void setTempAvailabilityCalendar(List<Availability> availability) {
+
+	public void setTempAvailabilityCalendar(Availability availability) {
 		this.substituteService.setTempAvailabilityCalendar(availability);
 		this.tempAvailability = availability;
 
 	}
-
-	public Map<Long, SchoolStatus> getSchoolIdList() {
-		return Collections.unmodifiableMap(schoolStatusMap);
+	/*
+	 * 
+	 * 
+	 * Shift methods
+	 * 
+	 * 
+	 */
+	public List<Shift> getShiftList() {
+		return Collections.unmodifiableList(this.shiftList);
 	}
-
+	public void setShiftList(List<Shift> shiftList) {
+		this.shiftList = shiftList;
+	}
+	public List<Shift> getShiftsByStatus(RequestStatus status){
+		List<Shift> list = new ArrayList<>();
+		this.shiftList.forEach(item ->{
+			if(item.getStatus()== status)
+				list.add(item);
+		});
+		return list;
+	}
+	
+	/* 
+	 * 
+	 * School Methods
+	 * 
+	 */
+	
+	public void addSchool(long schoolId, SchoolStatus status) {
+		this.updateSchoolStatus(schoolId, status);
+	}
+	
+	public void addShift(Shift shift){
+		this.shiftList.add(shift);
+	}
+	
 	public void updateSchoolStatus(long schoolId, SchoolStatus status) {
 		if (status == null)
 			throw new IllegalArgumentException("status null");
 		schoolStatusMap.put(schoolId, status);
 	}
-
-	public void addSchool(long schoolId, SchoolStatus status) {
-		this.updateSchoolStatus(schoolId, status);
+	
+	public Map<Long, SchoolStatus> getSchoolIdList() {
+		return Collections.unmodifiableMap(schoolStatusMap);
 	}
-
+	/* 
+	 * 
+	 * Getters and Setters
+	 * 
+	 */
+	
 	public boolean isActive() {
 		return active;
 	}
@@ -219,7 +284,16 @@ public class Substitute {
 	public long getSubstituteId() {
 		return substituteId;
 	}
-
+	
+	/* 
+	 * 
+	 * 
+	 * 
+	 * SubstituteBuilider
+	 * 
+	 * 
+	 * 
+	 */
 	public static class SubstituteBuilder {
 		private long substituteId;
 		private boolean active;
@@ -231,13 +305,39 @@ public class Substitute {
 		private String address;
 		private String postalCode;
 
-		private List<Availability> standardAvailability;
-		private List<Availability> tempAvailability;
-		private Map<Long, SchoolStatus> schoolIdList;
-
+		private Availability standardAvailability;
+		private Availability tempAvailability;
+		private Map<Long, SchoolStatus> schoolStatusMap;
+		private List<Shift> shiftList;
 		private SubstituteService substituteService;
 		private SubstituteMessaging substituteMessaging;
 		
+		
+		/*
+		 * 
+		 * 
+		 * Builder Method
+		 * 
+		 * 
+		 */
+		public Substitute build() {
+			Substitute sub = null;
+			if (this.schoolStatusMap == null) {
+				this.schoolStatusMap = new HashMap<Long, SchoolStatus>();
+			}
+			if (this.shiftList == null) {
+				this.shiftList= new ArrayList<>();
+			}
+
+			sub = new Substitute(this);
+			return sub;
+		}
+		
+		/*
+		 * 
+		 * 
+		 * 
+		 
 		public static Substitute loadSubstituteById(SubstituteService subService,long substituteId){
 			return Substitute.loadSubstituteById(subService, substituteId);
 		}
@@ -250,14 +350,7 @@ public class Substitute {
 		public static List<Substitute> getSubstitutesByLastName(SubstituteService subService,String lastName){
 			return Substitute.getSubstitutesByLastName(subService,lastName);
 		}
-		public Substitute build() {
-			if (this.schoolIdList == null) {
-				this.schoolIdList = new HashMap<Long, SchoolStatus>();
-			}
-
-			Substitute sub = new Substitute(this);
-			return sub;
-		}
+		*/
 
 		public SubstituteBuilder setSubstituteId(long substituteId) {
 			this.substituteId = substituteId;
@@ -307,9 +400,9 @@ public class Substitute {
 			this.postalCode = postalCode;
 			return this;
 		}
-
-		public SubstituteBuilder setSchoolIdList(Map<Long, SchoolStatus> schoolIdList) {
-			this.schoolIdList = schoolIdList;
+		//If not used then it will create an empty HashMap
+		public SubstituteBuilder setSchoolStatusMap(Map<Long, SchoolStatus> schoolIdList) {
+			this.schoolStatusMap = schoolIdList;
 			return this;
 		}
 
@@ -322,7 +415,13 @@ public class Substitute {
 			this.substituteMessaging = substituteMessaging;
 			return this;
 		}
-
+		/*
+		 * 
+		 * 
+		 * Getter Methods, separated because this is a builder class
+		 * 
+		 * 
+		 */
 		public boolean isActive() {
 			return active;
 		}
@@ -355,16 +454,16 @@ public class Substitute {
 			return postalCode;
 		}
 
-		public List<Availability> getStandardAvailability() {
+		public Availability getStandardAvailability() {
 			return this.standardAvailability;
 		}
 
-		public List<Availability> getTempAvailability() {
+		public Availability getTempAvailability() {
 			return this.tempAvailability;
 		}
 
-		public Map<Long, SchoolStatus> getSchoolIdList() {
-			return this.schoolIdList;
+		public Map<Long, SchoolStatus> getSchoolStatusMap() {
+			return this.schoolStatusMap;
 		}
 
 		public SubstituteService getSubstituteService() {
@@ -375,26 +474,31 @@ public class Substitute {
 			return this.substituteMessaging;
 		}
 
-		public SubstituteBuilder setStandardAvailability(List<Availability> standardAvailability) {
+		public List<Shift> getShiftList() {
+			return this.shiftList;
+		}
+
+		public SubstituteBuilder setShiftList(List<Shift> shiftList) {
+			this.shiftList = shiftList;
+			return this;
+			
+		}
+		/*
+		 * 
+		 * Availability setter methods
+		 * 
+		 */
+
+
+		public SubstituteBuilder setStandardAvailability(Availability standardAvailability) {
 			this.standardAvailability = standardAvailability;
 			return this;
 		}
 
-		public SubstituteBuilder setTempAvailability(List<Availability> tempAvailability) {
+		public SubstituteBuilder setTempAvailability(Availability tempAvailability) {
 			this.tempAvailability = tempAvailability;
 			return this;
 		}
 
-		public SubstituteBuilder setStandardAvailability(Availability standardAvailability) {
-			this.standardAvailability = new ArrayList<>();
-			this.standardAvailability.add(standardAvailability);
-			return this;
-		}
-
-		public SubstituteBuilder setTempAvailability(Availability tempAvailability) {
-			this.tempAvailability = new ArrayList<>();
-			this.tempAvailability.add(tempAvailability);
-			return this;
-		}
 	}
 }
