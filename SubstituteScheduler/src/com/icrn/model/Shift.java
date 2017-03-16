@@ -3,20 +3,23 @@ package com.icrn.model;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.UUID;
 
 import com.icrn.enumerations.RequestStatus;
 import com.icrn.service.RequestService;
+import com.icrn.service.ShiftService;
 
 public class Shift {
 	private long shiftId;
+	private long requestId;
+	private long substituteId;
 	private LocalDate date;
 	private LocalTime start;
 	private LocalTime end;
 	private RequestStatus status;
-	private long schoolId;
-	private long substituteId;
+//	private long schoolId;
 	
-	private RequestService service;
+	private ShiftService service;
 	
 	/*
 	 * 
@@ -25,18 +28,20 @@ public class Shift {
 	 * 
 	 * 
 	 */
-	public Shift(LocalDate date, LocalTime start, LocalTime end,RequestStatus status, long schoolId, long subId) {
-		this(0,date,start,end,status,schoolId,subId);
+	public Shift(long requestId, long substituteId, LocalDate date, LocalTime start, LocalTime end,RequestStatus status) {
+		this(0,requestId,substituteId,date,start,end,status);
 	}
-	public Shift(long shiftId, LocalDate date, LocalTime start, LocalTime end,RequestStatus status, long schoolId, long subId) {
+	public Shift(long shiftId, long requestId, long substituteId, LocalDate date, LocalTime start, LocalTime end,RequestStatus status) {
 		super();
 		this.shiftId = shiftId;
+		this.requestId = requestId;
+		this.substituteId =substituteId;
+		
 		this.date = date;
 		this.start = start;
 		this.end = end;
 		this.status = status;
-		this.schoolId = schoolId;
-		this.substituteId =subId;
+
 	}
 	
 	/*
@@ -47,15 +52,15 @@ public class Shift {
 	 * 
 	 */
 	
-	public boolean isWithinShift(LocalDate day, LocalTime startTime, LocalTime endTime){
-		if(this.date.equals(day) &&	
-				start.plusMinutes(-1).isBefore(startTime) && 
-				end.plusMinutes(1).isAfter(endTime)){
-			return true;
-		}
-		
-		return false;
-	}
+//	public boolean isWithinShift(LocalDate day, LocalTime startTime, LocalTime endTime){
+//		if(this.date.equals(day) &&	
+//				start.plusMinutes(-1).isBefore(startTime) && 
+//				end.plusMinutes(1).isAfter(endTime)){
+//			return true;
+//		}
+//		
+//		return false;
+//	}
 	/*
 	 * 
 	 * 
@@ -83,6 +88,21 @@ public class Shift {
 	 * 
 	 * 
 	 */
+	public long getSubstituteId() {
+		return substituteId;
+	}
+	public void setSubstituteId(long substituteId){
+		this.substituteId = substituteId;
+	}
+	public long getShiftId(){
+		return shiftId;
+	}
+	public long getRequestId() {
+		return requestId;
+	}
+	public void setRequestId(long requestId) {
+		this.requestId = requestId;
+	}
 	
 	public LocalDateTime getLocalDateTimeStart(){
 		return LocalDateTime.of(date, start);
@@ -111,22 +131,13 @@ public class Shift {
 		this.status = status;
 	}
 
-	public long getSchoolId() {
-		return schoolId;
-	}
+//	public long getSchoolId() {
+//		return schoolId;
+//	}
+//
+//	public void setSchoolId(long schoolId) {
+//		this.schoolId = schoolId;
+//	}
 
-	public void setSchoolId(long schoolId) {
-		this.schoolId = schoolId;
-	}
 
-	public long getSubstituteId() {
-		return substituteId;
-	}
-
-	public void setSubstituteId(long subId) {
-		this.substituteId = subId;
-	}
-	public long getShiftId(){
-		return shiftId;
-	}
 }

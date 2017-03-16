@@ -9,8 +9,6 @@ public interface RequestService {
 
 	public void updateRequest(Request request);
 
-	public long createShift(Shift shift);
 
-	public boolean updateShift(Shift shift);
 
 }

@@ -31,7 +31,7 @@ public class Substitute {
 	private Availability tempAvailability;
 
 	private SubstituteService substituteService;
-	private SubstituteMessaging substituteMessaging;
+//	private SubstituteMessaging substituteMessaging;
 
 	/* 
 	 * 
@@ -68,7 +68,7 @@ public class Substitute {
 		this.postalCode = sb.getPostalCode();
 		this.schoolStatusMap = sb.getSchoolStatusMap();
 		this.substituteService = sb.getSubstituteService();
-		this.substituteMessaging = sb.getSubstituteMessaging();
+//		this.substituteMessaging = sb.getSubstituteMessaging();
 		this.standardAvailability = sb.getStandardAvailability(); 
 		this.tempAvailability = sb.getTempAvailability();
 		
@@ -135,11 +135,12 @@ public class Substitute {
 			return this.getStandardAvailabilityCalendar().isAvailableDuring(day, start, end);
 		}
 	}
-	
+
+	//Is this needed? What purpose does this serve? We already know if available from isAvailable
 	//This returns an inclusive date. So 1-3 will return 1,2,3rd dates
-	public Map<LocalDate, Shift> getShiftAvailability(LocalDateTime start, LocalDateTime end) {
-		return this.substituteService.GetShiftAvailabilityForSubstitute(this.getSubstituteId(), start, end);
-	}
+//	public Map<LocalDate, Shift> getShiftAvailability(LocalDateTime start, LocalDateTime end) {
+//		return this.substituteService.GetShiftAvailabilityForSubstitute(this.getSubstituteId(), start, end);
+//	}
 
 	public Availability getStandardAvailabilityCalendar() {
 		return this.standardAvailability;
@@ -184,6 +185,9 @@ public class Substitute {
 		return list;
 	}
 	
+	public void addShift(Shift shift){
+		this.shiftList.add(shift);
+	}
 	/* 
 	 * 
 	 * School Methods
@@ -194,9 +198,7 @@ public class Substitute {
 		this.updateSchoolStatus(schoolId, status);
 	}
 	
-	public void addShift(Shift shift){
-		this.shiftList.add(shift);
-	}
+
 	
 	public void updateSchoolStatus(long schoolId, SchoolStatus status) {
 		if (status == null)
@@ -289,7 +291,7 @@ public class Substitute {
 	 * 
 	 * 
 	 * 
-	 * SubstituteBuilider
+	 * SubstituteBuilider Class
 	 * 
 	 * 
 	 * 
@@ -310,7 +312,7 @@ public class Substitute {
 		private Map<Long, SchoolStatus> schoolStatusMap;
 		private List<Shift> shiftList;
 		private SubstituteService substituteService;
-		private SubstituteMessaging substituteMessaging;
+//		private SubstituteMessaging substituteMessaging;
 		
 		
 		/*
@@ -333,24 +335,7 @@ public class Substitute {
 			return sub;
 		}
 		
-		/*
-		 * 
-		 * 
-		 * 
-		 
-		public static Substitute loadSubstituteById(SubstituteService subService,long substituteId){
-			return Substitute.loadSubstituteById(subService, substituteId);
-		}
-		public static List<Substitute> getSubstitutes(SubstituteService subService){
-			return Substitute.getSubstitutes(subService);
-		}
-		public static List<Substitute> getSubstitutesByFirstName(SubstituteService subService,String firstName){
-			return Substitute.getSubstitutesByFirstName(subService,firstName);
-		}
-		public static List<Substitute> getSubstitutesByLastName(SubstituteService subService,String lastName){
-			return Substitute.getSubstitutesByLastName(subService,lastName);
-		}
-		*/
+
 
 		public SubstituteBuilder setSubstituteId(long substituteId) {
 			this.substituteId = substituteId;
@@ -411,10 +396,10 @@ public class Substitute {
 			return this;
 		}
 
-		public SubstituteBuilder setSubstituteMessaging(SubstituteMessaging substituteMessaging) {
-			this.substituteMessaging = substituteMessaging;
-			return this;
-		}
+//		public SubstituteBuilder setSubstituteMessaging(SubstituteMessaging substituteMessaging) {
+//			this.substituteMessaging = substituteMessaging;
+//			return this;
+//		}
 		/*
 		 * 
 		 * 
@@ -470,9 +455,9 @@ public class Substitute {
 			return this.substituteService;
 		}
 
-		public SubstituteMessaging getSubstituteMessaging() {
-			return this.substituteMessaging;
-		}
+//		public SubstituteMessaging getSubstituteMessaging() {
+//			return this.substituteMessaging;
+//		}
 
 		public List<Shift> getShiftList() {
 			return this.shiftList;
