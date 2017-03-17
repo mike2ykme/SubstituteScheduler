@@ -5,13 +5,14 @@ import java.time.LocalTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import com.icrn.enumerations.RequestStatus;
 import com.icrn.service.RequestService;
 
 public class Request {
-	private long requestId;
-	private Map<Long,RequestStatus> substituteIdStatusMap; //This will store the SubId-> how they responded
+	private String requestId;
+	private Map<String,RequestStatus> substituteIdStatusMap; //This will store the SubId-> how they responded
 	private LocalDate day;
 	private LocalTime startTime;
 	private LocalTime endTime;
@@ -29,9 +30,10 @@ public class Request {
 	 */
 	
 	//Used when pulling out of DB b/c ID will be created at that time. Otherwise just leave to 0
-	public Request(long requestId,long substituteId,RequestStatus subStatus, LocalDate day, LocalTime startTime, LocalTime endTime,RequestStatus status, String notes) {
+	public Request(String requestId,String substituteId,RequestStatus subStatus, LocalDate day, LocalTime startTime, LocalTime endTime,RequestStatus status, String notes) {
 		this();
-		this.requestId = requestId;
+		if(requestId.length() <32) throw new IllegalArgumentException("invalid Request Id");
+		this.requestId = requestId.replace("-", "");
 		this.substituteIdStatusMap.put(substituteId, subStatus);
 		this.day = day;
 		this.startTime = startTime;
@@ -40,10 +42,10 @@ public class Request {
 		this.notes = notes;
 	}
 	
-	public Request(long substituteId,RequestStatus subStatus, LocalDate day, LocalTime startTime, LocalTime endTime,RequestStatus status, String notes) {
+	public Request(String substituteId,RequestStatus subStatus, LocalDate day, LocalTime startTime, LocalTime endTime,RequestStatus status, String notes) {
 		this();
 		this.substituteIdStatusMap.put(substituteId, subStatus);
-		this.requestId = 0;
+		this.requestId = UUID.randomUUID().toString().replace("-", "");
 		this.day = day;
 		this.startTime = startTime;
 		this.endTime = endTime;
@@ -51,9 +53,9 @@ public class Request {
 		this.notes = notes;
 	}
 	
-	public Request(Map<Long,RequestStatus> substituteIdStatusMap, LocalDate day, LocalTime startTime, LocalTime endTime,RequestStatus status, String notes) {
+	public Request(Map<String,RequestStatus> substituteIdStatusMap, LocalDate day, LocalTime startTime, LocalTime endTime,RequestStatus status, String notes) {
 		this.substituteIdStatusMap = new HashMap<>(substituteIdStatusMap);
-		this.requestId = 0;
+		this.requestId = UUID.randomUUID().toString().replace("-", "");
 		this.day = day;
 		this.startTime = startTime;
 		this.endTime = endTime;
@@ -74,10 +76,9 @@ public class Request {
 	 */
 	
 	public void persist(){
-		if(this.requestId ==0){
-			this.requestId = this.service.createRequest(this);
+		if(this.requestId.contains("-")){
+			this.requestId = this.requestId.replace("-", "");
 		}
-		else
 			this.service.updateRequest(this);
 	}
 	
@@ -87,11 +88,11 @@ public class Request {
 	 * 
 	 */
 	
-	public Map<Long,RequestStatus> getSubstituteIdStatusMap(){
+	public Map<String,RequestStatus> getSubstituteIdStatusMap(){
 		return Collections.unmodifiableMap(this.substituteIdStatusMap);
 	}
 	
-	public void setSubstituteIdStatusMap(Map<Long,RequestStatus> substituteIdStatusMap){
+	public void setSubstituteIdStatusMap(Map<String,RequestStatus> substituteIdStatusMap){
 		if(substituteIdStatusMap == null){
 			throw new IllegalArgumentException("substituteIdStatusMap cannot be null");
 		}
@@ -100,9 +101,9 @@ public class Request {
 		
 	}
 	//This returns like map does, previous value associated with key or null if nothing was there.
-	public RequestStatus addSubstituteId(long substituteId, RequestStatus status){
-		if(status ==null || substituteId == 0) 
-			throw new IllegalArgumentException("status cannot be null and substituteId cannot be 0");
+	public RequestStatus addSubstituteId(String substituteId, RequestStatus status){
+		if(status ==null || substituteId == null) 
+			throw new IllegalArgumentException("status and substituteId cannot be null");
 		else
 			return this.substituteIdStatusMap.put(substituteId, status);
 	}
@@ -115,10 +116,11 @@ public class Request {
 	 * 
 	 */
 	
-	public long getRequestId() {
+	public String getRequestId() {
 		return requestId;
 	}
-	public void setRequestId(long requestId) {
+	public void setRequestId(String requestId) {
+		
 		this.requestId = requestId;
 	}
 

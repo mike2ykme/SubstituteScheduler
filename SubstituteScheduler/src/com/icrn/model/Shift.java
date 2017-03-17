@@ -10,14 +10,14 @@ import com.icrn.service.RequestService;
 import com.icrn.service.ShiftService;
 
 public class Shift {
-	private long shiftId;
-	private long requestId;
-	private long substituteId;
+	private String shiftId;
+	private String requestId;
+	private String substituteId;
 	private LocalDate date;
 	private LocalTime start;
 	private LocalTime end;
 	private RequestStatus status;
-//	private long schoolId;
+//	private String schoolId;
 	
 	private ShiftService service;
 	
@@ -28,10 +28,17 @@ public class Shift {
 	 * 
 	 * 
 	 */
-	public Shift(long requestId, long substituteId, LocalDate date, LocalTime start, LocalTime end,RequestStatus status) {
-		this(0,requestId,substituteId,date,start,end,status);
+	public Shift(String requestId, String substituteId, LocalDate date, LocalTime start, LocalTime end,RequestStatus status) {
+		this(UUID.randomUUID().toString().replace("-",""),
+				requestId,
+				substituteId,
+				date,
+				start,
+				end,
+				status
+			);
 	}
-	public Shift(long shiftId, long requestId, long substituteId, LocalDate date, LocalTime start, LocalTime end,RequestStatus status) {
+	public Shift(String shiftId, String requestId, String substituteId, LocalDate date, LocalTime start, LocalTime end,RequestStatus status) {
 		super();
 		this.shiftId = shiftId;
 		this.requestId = requestId;
@@ -47,23 +54,6 @@ public class Shift {
 	/*
 	 * 
 	 * 
-	 * helper
-	 * 
-	 * 
-	 */
-	
-//	public boolean isWithinShift(LocalDate day, LocalTime startTime, LocalTime endTime){
-//		if(this.date.equals(day) &&	
-//				start.plusMinutes(-1).isBefore(startTime) && 
-//				end.plusMinutes(1).isAfter(endTime)){
-//			return true;
-//		}
-//		
-//		return false;
-//	}
-	/*
-	 * 
-	 * 
 	 * Persistence
 	 * 
 	 * 
@@ -71,14 +61,11 @@ public class Shift {
 	public boolean persist() {
 		
 		//TODO: Need to ensure data validation is done before sending an object to be persisted
-		if(this.shiftId == 0){
-			//The DB will provide the keyId for this, so when saved, get the key and update this.
-			this.shiftId = this.service.createShift(this);
-			return true;
+		if(this.shiftId.contains("-")){
+			this.shiftId = this.shiftId.replace("-","");
 		}
-		else{
 			return this.service.updateShift(this);	
-		}
+		
 	}
 	
 	/*
@@ -88,19 +75,19 @@ public class Shift {
 	 * 
 	 * 
 	 */
-	public long getSubstituteId() {
+	public String getSubstituteId() {
 		return substituteId;
 	}
-	public void setSubstituteId(long substituteId){
+	public void setSubstituteId(String substituteId){
 		this.substituteId = substituteId;
 	}
-	public long getShiftId(){
+	public String getShiftId(){
 		return shiftId;
 	}
-	public long getRequestId() {
+	public String getRequestId() {
 		return requestId;
 	}
-	public void setRequestId(long requestId) {
+	public void setRequestId(String requestId) {
 		this.requestId = requestId;
 	}
 	
@@ -131,11 +118,11 @@ public class Shift {
 		this.status = status;
 	}
 
-//	public long getSchoolId() {
+//	public String getSchoolId() {
 //		return schoolId;
 //	}
 //
-//	public void setSchoolId(long schoolId) {
+//	public void setSchoolId(String schoolId) {
 //		this.schoolId = schoolId;
 //	}
 

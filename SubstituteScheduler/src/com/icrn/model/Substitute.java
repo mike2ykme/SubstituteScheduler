@@ -1,13 +1,13 @@
 package com.icrn.model;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.icrn.enumerations.RequestStatus;
 import com.icrn.enumerations.SchoolStatus;
@@ -16,7 +16,7 @@ import com.icrn.service.SubstituteService;
 
 public class Substitute {
 
-	private long substituteId;
+	private String substituteId;
 	private boolean active;
 	private String firstName;
 	private String lastName;
@@ -25,7 +25,7 @@ public class Substitute {
 	private String phone;
 	private String address;
 	private String postalCode;
-	private Map<Long, SchoolStatus> schoolStatusMap;
+	private Map<String, SchoolStatus> schoolStatusMap;
 	private List<Shift> shiftList;
 	private Availability standardAvailability;
 	private Availability tempAvailability;
@@ -82,20 +82,12 @@ public class Substitute {
 	
 	public boolean persist() {
 		//TODO: Need to ensure data validation is done before sending an object to be persisted
-		if(this.substituteId == 0){
-			//The DB will provide the keyId for this, so when saved, get the key and update this.
-			this.substituteId = this.substituteService.createSubstitute(this);
-			
-			this.shiftList.forEach(shift ->{
-				if(shift.getSubstituteId() != this.substituteId)
-					shift.setSubstituteId(this.substituteId);
-			});
-			
-			return true;
+		//TODO: Needs to be implemented
+		if(this.substituteId.contains("-")){
+			this.substituteId = this.substituteId.replace("-", "");
 		}
-		else{
-			return this.substituteService.updateSubstitute(this);	
-		}
+		return this.substituteService.updateSubstitute(this);
+		
 	}
 		
 	/* 
@@ -104,7 +96,7 @@ public class Substitute {
 	 * 
 	 */
 	
-	public static Substitute loadSubstituteById(SubstituteService subService,long substituteId){
+	public static Substitute loadSubstituteById(SubstituteService subService,String substituteId){
 		return subService.getSubstitute(substituteId);
 	}
 	public static List<Substitute> getSubstitutes(SubstituteService subService){
@@ -136,19 +128,12 @@ public class Substitute {
 		}
 	}
 
-	//Is this needed? What purpose does this serve? We already know if available from isAvailable
-	//This returns an inclusive date. So 1-3 will return 1,2,3rd dates
-//	public Map<LocalDate, Shift> getShiftAvailability(LocalDateTime start, LocalDateTime end) {
-//		return this.substituteService.GetShiftAvailabilityForSubstitute(this.getSubstituteId(), start, end);
-//	}
-
 	public Availability getStandardAvailabilityCalendar() {
 		return this.standardAvailability;
 	}
 
 
 	public void setStandardAvailabilityCalendar(Availability availability) {
-		this.substituteService.setStandardAvailabilityCalendar(availability);
 		this.standardAvailability = availability;
 	}
 
@@ -159,7 +144,6 @@ public class Substitute {
 
 
 	public void setTempAvailabilityCalendar(Availability availability) {
-		this.substituteService.setTempAvailabilityCalendar(availability);
 		this.tempAvailability = availability;
 
 	}
@@ -194,19 +178,19 @@ public class Substitute {
 	 * 
 	 */
 	
-	public void addSchool(long schoolId, SchoolStatus status) {
+	public void addSchool(String schoolId, SchoolStatus status) {
 		this.updateSchoolStatus(schoolId, status);
 	}
 	
 
 	
-	public void updateSchoolStatus(long schoolId, SchoolStatus status) {
+	public void updateSchoolStatus(String schoolId, SchoolStatus status) {
 		if (status == null)
 			throw new IllegalArgumentException("status null");
 		schoolStatusMap.put(schoolId, status);
 	}
 	
-	public Map<Long, SchoolStatus> getSchoolIdList() {
+	public Map<String, SchoolStatus> getSchoolIdList() {
 		return Collections.unmodifiableMap(schoolStatusMap);
 	}
 	/* 
@@ -283,7 +267,7 @@ public class Substitute {
 		this.postalCode = postalCode;
 	}
 
-	public long getSubstituteId() {
+	public String getSubstituteId() {
 		return substituteId;
 	}
 	
@@ -297,7 +281,7 @@ public class Substitute {
 	 * 
 	 */
 	public static class SubstituteBuilder {
-		private long substituteId;
+		private String substituteId;
 		private boolean active;
 		private String firstName;
 		private String lastName;
@@ -309,7 +293,7 @@ public class Substitute {
 
 		private Availability standardAvailability;
 		private Availability tempAvailability;
-		private Map<Long, SchoolStatus> schoolStatusMap;
+		private Map<String, SchoolStatus> schoolStatusMap;
 		private List<Shift> shiftList;
 		private SubstituteService substituteService;
 //		private SubstituteMessaging substituteMessaging;
@@ -324,12 +308,7 @@ public class Substitute {
 		 */
 		public Substitute build() {
 			Substitute sub = null;
-			if (this.schoolStatusMap == null) {
-				this.schoolStatusMap = new HashMap<Long, SchoolStatus>();
-			}
-			if (this.shiftList == null) {
-				this.shiftList= new ArrayList<>();
-			}
+
 
 			sub = new Substitute(this);
 			return sub;
@@ -337,12 +316,17 @@ public class Substitute {
 		
 
 
-		public SubstituteBuilder setSubstituteId(long substituteId) {
+		public SubstituteBuilder setSubstituteId(String substituteId) {
+			if(substituteId.length() <32) throw new IllegalArgumentException("Invalid Substitute Id");
 			this.substituteId = substituteId;
 			return this;
 		}
+		public SubstituteBuilder generateUniqueSubstituteId() {
+			this.substituteId = UUID.randomUUID().toString().replace("-", "");
+			return this;
+		}
 
-		public long getSubstituteId() {
+		public String getSubstituteId() {
 			return substituteId;
 		}
 
@@ -385,12 +369,15 @@ public class Substitute {
 			this.postalCode = postalCode;
 			return this;
 		}
-		//If not used then it will create an empty HashMap
-		public SubstituteBuilder setSchoolStatusMap(Map<Long, SchoolStatus> schoolIdList) {
+		public SubstituteBuilder setSchoolStatusMap(Map<String, SchoolStatus> schoolIdList) {
 			this.schoolStatusMap = schoolIdList;
 			return this;
 		}
-
+		public SubstituteBuilder generateEmptySchoolStatusMap() {
+			this.schoolStatusMap = new HashMap<>();
+			return this;
+		}
+		
 		public SubstituteBuilder setSubstituteService(SubstituteService substituteService) {
 			this.substituteService = substituteService;
 			return this;
@@ -447,7 +434,7 @@ public class Substitute {
 			return this.tempAvailability;
 		}
 
-		public Map<Long, SchoolStatus> getSchoolStatusMap() {
+		public Map<String, SchoolStatus> getSchoolStatusMap() {
 			return this.schoolStatusMap;
 		}
 
@@ -465,6 +452,11 @@ public class Substitute {
 
 		public SubstituteBuilder setShiftList(List<Shift> shiftList) {
 			this.shiftList = shiftList;
+			return this;
+			
+		}
+		public SubstituteBuilder generateEmptyShiftList() {
+			this.shiftList = new ArrayList<>();
 			return this;
 			
 		}

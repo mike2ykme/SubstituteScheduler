@@ -12,11 +12,11 @@ import com.icrn.model.Substitute;
 
 public interface SubstituteService {
 
-	Substitute getSubstitute(long substituteId);
+	Substitute getSubstitute(String substituteId);
 
 	boolean updateSubstitute(long substituteId, Substitute substitute);
 
-	Map<LocalDate, Shift> GetShiftAvailabilityForSubstitute(long substituteId, LocalDateTime start, LocalDateTime end);
+	Map<LocalDate, Shift> GetShiftAvailabilityForSubstitute(String substituteId, LocalDateTime start, LocalDateTime end);
 
 	boolean updateSubstitute(Substitute substitute);
 
@@ -32,11 +32,11 @@ public interface SubstituteService {
 
 	void addStandardAvailabilityCalendar(Availability availability);
 
-	List<Availability> getStandardAvailability(long substituteId);
+	List<Availability> getStandardAvailability(String substituteId);
 
-	List<Availability> getTempAvailability(long substituteId);
+	List<Availability> getTempAvailability(String substituteId);
 
-	Map<Long, SchoolStatus> getSchoolAvailability(long substituteId);
+	Map<Long, SchoolStatus> getSchoolAvailability(String substituteId);
 
 	List<Substitute> getListSubstitutes();
 
